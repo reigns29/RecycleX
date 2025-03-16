@@ -4,12 +4,6 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
-  exportPathMap: async function (defaultPathMap) {
-    return {
-      ...defaultPathMap,
-      "/api/analysis": { page: "/api/analysis" },
-    };
-  },
   experimental: {
     serverActions: true,
   },
