@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ItemStatus {
+  PENDING
+  MATCHED
+  SOLD
+}
+
+model Item {
+  id              String     @id @default(uuid()) @db.Uuid
+  userId          String // Clerk Auth ID
+  imageUrl        String
+  category        String
+  estimatedPrice  Float
+  carbonFootprint Float
+  location        String
+  status          ItemStatus @default(PENDING)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  latitude        Float? // For geospatial queries
+  longitude       Float? // For geospatial queries
+
+  // Relations
+  matches BuyerMatch[]
+
+  @@index([userId])
+  @@index([category])
+  @@index([status])
+  @@index([latitude, longitude]) // Index for geospatial queries
+}
+
+model Buyer {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String
+  name                String
+  contactInfo         String
+  bio                 String
+  preferredCategories String[] // Array of categories
+  maxPrice            Float
+  location            String
+  latitude            Float // For geospatial queries
+  longitude           Float // For geospatial queries
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  isActive            Boolean  @default(true)
+  rating              Float? // Average rating from sellers
+  totalTransactions   Int      @default(0)
+
+  // Relations
+  matches BuyerMatch[]
+
+  @@index([preferredCategories])
+  @@index([latitude, longitude]) // Index for geospatial queries
+  @@index([isActive])
+}
+
+model BuyerMatch {
+  id        String   @id @default(uuid()) @db.Uuid
+  buyerId   String   @db.Uuid
+  itemId    String   @db.Uuid
+  status    String // e.g., 'pending', 'accepted', 'rejected'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  buyer Buyer @relation(fields: [buyerId], references: [id])
+  item  Item  @relation(fields: [itemId], references: [id])
+
+  @@unique([buyerId, itemId]) // Prevent duplicate matches
+  @@index([status])
+}
